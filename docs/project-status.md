@@ -20,8 +20,10 @@ and full-suite verification.
   successful bounded run.
 - Real WorkBuddy adapter: rejected under the previously observed generic CLI
   startup surface; not implemented here.
-- Remote repository: not created.
-- Publication: not performed.
+- Remote repository: public GitHub repository
+  `bobbanga/codex-workbuddy-coordinator`; local `main` tracks `origin/main`.
+- Publication: source repository is public; no package registry release has
+  been performed.
 
 ## Verification Gate
 
