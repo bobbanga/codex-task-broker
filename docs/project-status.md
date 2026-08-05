@@ -13,6 +13,8 @@ and full-suite verification.
 
 - Distribution: `codex-workbuddy-coordinator` 0.1.0.
 - Console command: `codex-workbuddy`.
+- Installation: Bob-approved user-level Python installation, verified with
+  `codex-workbuddy --help`.
 - Runtime mode: `mock_only` only.
 - Public stop states: `VALIDATED` for validation and `REVIEW_READY` for a
   successful bounded run.
