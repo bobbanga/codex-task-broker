@@ -14,21 +14,20 @@ can check.
 The problem it solves: when you delegate a change, you should not have to take the
 other side's word for whether it is correct.
 
-The current CLI supports only `mock_only` mode, meaning it starts just the local
-command you explicitly configure in the Run Request, and does not yet implement a
-real adapter. WorkBuddy is the planned/target and only MVP-stage executor adapter.
-The protocol version is V0.9a.
+The legacy Run Request entry remains `mock_only`; the broker entry now provides a
+WorkBuddy adapter, subject to a successful `doctor` capability check. The protocol
+version is V0.9a.
 
 ## Status
 
 | Item | Status |
 | --- | --- |
 | CLI version | `0.1.0` |
-| Supported mode | `mock_only` only |
+| Supported mode | `mock_only` and WorkBuddy broker |
 | Python | 3.11 or newer |
 | GitHub | Public |
 | PyPI | Not published |
-| Real WorkBuddy adapter | Not certified or implemented |
+| Real WorkBuddy adapter | Wired in; requires a passing local doctor |
 
 ## Installation
 
@@ -38,21 +37,21 @@ Install from a local checkout:
 py -3 -m pip install .
 ```
 
-Install from GitHub, which becomes usable only after the planned repository
-rename:
+Install from GitHub:
 
 ```powershell
 py -3 -m pip install "git+https://github.com/bobbanga/codex-task-broker.git"
 ```
 
-That remote does not exist yet. Until the rename lands, installing from a local
-checkout is the only supported path. The project is not published on PyPI.
+The project is not published on PyPI.
 
 ## Usage
 
 ```powershell
 codex-broker validate <run-request.json>
 codex-broker run <run-request.json>
+codex-broker doctor --executor workbuddy --json
+codex-broker run --repo <repository> --brief <brief.json> --executor workbuddy --json
 ```
 
 - `validate` checks the request only. A valid request returns `VALIDATED` and never starts the Contributor.
@@ -66,16 +65,16 @@ minimal request.
 
 ## Security Boundaries
 
-- Only `mode="mock_only"` is accepted.
+- The compatibility entry accepts `mode="mock_only"`; the broker entry uses an explicit task brief.
 - The Run Request JSON is the sole editable runtime input owner.
 - Contributor and verification commands use argv arrays with `shell=false`.
 - Child processes receive only explicitly allowlisted environment variables.
 - `run_store_path` must be outside the target checkout.
 - Contributor claims are not authoritative; the Runner recalculates Git, test, and artifact facts.
 - `REVIEW_READY` is a handoff to Codex, not approval.
-- The CLI contains no path that invokes real WorkBuddy.
+- WorkBuddy runs require a passing `doctor` check and stop at Codex review.
 
-WorkBuddy is the only MVP-stage executor adapter. A real WorkBuddy adapter requires a native narrow/no-tools mode or a separately supported and certified API adapter. Publishing this repository does not enable that capability.
+WorkBuddy is the only MVP-stage executor adapter. It never auto-merges, pushes, publishes, or widens permissions.
 
 ## Source Ownership
 

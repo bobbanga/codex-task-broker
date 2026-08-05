@@ -10,20 +10,19 @@
 
 它解决的问题是：委托出去的改动，你不必靠对方的说法来判断是否可信。
 
-当前 CLI 只支持 `mock_only` 模式，即只会启动你在 Run Request 里显式配置的本地命令，
-尚未实现真实 adapter。WorkBuddy 是规划中（目标）且仅有的 MVP executor adapter。
-协议版本为 V0.9a。
+兼容的旧版 Run Request 仍使用 `mock_only` 模式；新的 broker 入口提供 WorkBuddy
+适配器，但必须先通过 `doctor` 能力检查。协议版本为 V0.9a。
 
 ## 当前状态
 
 | 项目 | 状态 |
 | --- | --- |
 | CLI 版本 | `0.1.0` |
-| 支持模式 | 仅 `mock_only` |
+| 支持模式 | `mock_only` 与 WorkBuddy broker |
 | Python | 3.11 及以上 |
 | GitHub | 公开 |
 | PyPI | 尚未发布 |
-| 真实 WorkBuddy adapter | 尚未认证，也未实现 |
+| 真实 WorkBuddy adapter | 已接入，需本机 doctor 通过后运行 |
 
 ## 安装
 
@@ -33,19 +32,21 @@
 py -3 -m pip install .
 ```
 
-从 GitHub 安装（仅在计划中的仓库改名完成后可用）：
+从 GitHub 安装：
 
 ```powershell
 py -3 -m pip install "git+https://github.com/bobbanga/codex-task-broker.git"
 ```
 
-该远端地址目前尚不存在；在改名完成前，唯一可用的安装方式是本地源码安装。本项目尚未发布到 PyPI。
+本项目尚未发布到 PyPI。
 
 ## 使用
 
 ```powershell
 codex-broker validate <run-request.json>
 codex-broker run <run-request.json>
+codex-broker doctor --executor workbuddy --json
+codex-broker run --repo <repository> --brief <brief.json> --executor workbuddy --json
 ```
 
 - `validate` 只校验请求；成功时返回 `VALIDATED`，不会启动 Contributor。
@@ -58,16 +59,16 @@ Run Request 字段见[协议文档](docs/protocol.md)，机器校验见
 
 ## 安全边界
 
-- 只接受 `mode="mock_only"`。
+- 兼容入口接受 `mode="mock_only"`；WorkBuddy 入口使用显式任务 brief。
 - Run Request JSON 是运行输入的唯一可编辑主人。
 - Contributor 和验证命令必须使用 argv 数组，并以 `shell=false` 启动。
 - 子进程只能收到显式允许的环境变量。
 - `run_store_path` 必须位于目标 checkout 之外。
 - Contributor 自述不是权威证据；Runner 会重新计算 Git、测试和 artifact 事实。
 - `REVIEW_READY` 只是交给 Codex 审阅，不代表批准。
-- CLI 不包含调用真实 WorkBuddy 的路径。
+- WorkBuddy 运行必须先通过 `doctor`，并在完成后停在 Codex review。
 
-WorkBuddy 是当前 MVP 阶段唯一的 executor adapter；真实 WorkBuddy adapter 需要原生 narrow/no-tools 模式，或另行支持和认证的 API adapter。公开本仓库并不会自动开放该能力。
+WorkBuddy 是当前 MVP 阶段唯一的 executor adapter。它不会自动绕过权限、合并、推送或发布。
 
 ## 源码边界
 

@@ -7,8 +7,8 @@ Subcommands:
     Contributor.
 
 ``run <run-request.json>``
-    Repeat all validation and then perform one bounded mock-only attempt. This
-    is the original advanced machine contract and is preserved unchanged.
+    Repeat all validation and then perform one bounded attempt. The original
+    mock-only machine contract is preserved alongside the broker form.
 
 ``run --repo <path> --brief <brief.json> --executor <name> [--json]``
     Perform one brokered run: create an isolated worktree bound to the base
@@ -265,7 +265,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog=PROGRAM,
         description=(
-            "Run one bounded mock-only brokered attempt from an explicit "
+            "Run one bounded brokered attempt from an explicit "
             "Run Request. Stops at REVIEW_READY; never reviews, merges, "
             "pushes, installs, or publishes."
         ),
