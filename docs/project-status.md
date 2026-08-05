@@ -37,6 +37,7 @@ Use the installed mock-only CLI in one disposable external Git project. Any
 real WorkBuddy backend requires a new approved architecture based on a native
 narrow/no-tools mode or a separately supported API adapter.
 
-PyPI publication is tracked as a deferred GitHub issue. It may proceed only
-after the issue's cross-project observation, metadata, CI, TestPyPI, clean-install,
-and final Bob approval gates are satisfied.
+PyPI publication is tracked in GitHub issue
+[#1](https://github.com/bobbanga/codex-workbuddy-coordinator/issues/1). It may
+proceed only after the issue's cross-project observation, metadata, CI,
+TestPyPI, clean-install, and final Bob approval gates are satisfied.
