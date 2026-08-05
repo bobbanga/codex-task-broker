@@ -20,11 +20,11 @@ The implemented Stage 1c validator lives in the coordinator test-support package
 
 ## Run Request (cross-project CLI)
 
-The `codex-workbuddy` console command reads exactly one Run Request JSON file. That file is the only editable input owner; the CLI infers nothing from chat, cwd, environment, project metadata, or model defaults.
+The `codex-broker` console command reads exactly one Run Request JSON file. That file is the only editable input owner; the CLI infers nothing from chat, cwd, environment, project metadata, or model defaults.
 
 ```json
 {
-  "schema": "codex-workbuddy-run-request",
+  "schema": "codex-task-broker-run-request",
   "schema_version": 1,
   "mode": "mock_only",
   "task_id": "TASK-001",

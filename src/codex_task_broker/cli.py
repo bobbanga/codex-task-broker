@@ -1,4 +1,4 @@
-"""``codex-workbuddy`` console command.
+"""``codex-broker`` console command.
 
 Two subcommands are exposed:
 
@@ -25,7 +25,8 @@ from pathlib import Path
 from .request import RunRequest
 from .runner import STATE_EXIT_CODES, run_once, validate_request
 
-PROGRAM = "codex-workbuddy"
+PROGRAM = "codex-broker"
+RESULT_SCHEMA = "codex-task-broker-cli-result"
 
 
 def _emit(payload: dict, stream: object = None) -> None:
@@ -40,7 +41,7 @@ def _diagnose(message: str) -> None:
 
 def _failure(command: str, errors: list[str], state: str) -> int:
     payload = {
-        "schema": "codex-workbuddy-cli-result",
+        "schema": RESULT_SCHEMA,
         "schema_version": 1,
         "command": command,
         "state": state,
@@ -57,7 +58,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog=PROGRAM,
         description=(
-            "Run one bounded mock-only coordination attempt from an explicit "
+            "Run one bounded mock-only brokered attempt from an explicit "
             "Run Request. Stops at REVIEW_READY; never reviews, merges, "
             "pushes, installs, or publishes."
         ),
@@ -108,7 +109,7 @@ def main(argv: list[str] | None = None) -> int:
             return _failure("validate", list(validation.errors), "PREFLIGHT_FAILED")
         _emit(
             {
-                "schema": "codex-workbuddy-cli-result",
+                "schema": RESULT_SCHEMA,
                 "schema_version": 1,
                 "command": "validate",
                 "state": "VALIDATED",
@@ -128,7 +129,7 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     payload = {
-        "schema": "codex-workbuddy-cli-result",
+        "schema": RESULT_SCHEMA,
         "schema_version": 1,
         "command": "run",
         **result.to_dict(),

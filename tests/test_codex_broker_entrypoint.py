@@ -1,4 +1,4 @@
-"""CLI surface tests for ``codex-workbuddy``.
+"""CLI surface tests for ``codex-broker``.
 
 Most tests exercise ``main`` in process. One smoke test additionally installs
 the local project into a disposable virtual environment built from a temporary
@@ -20,13 +20,13 @@ from pathlib import Path
 
 import pytest
 
-from bob_skills.codex_workbuddy_coordinator.cli import main
+from codex_task_broker.cli import main
 
 TASK_ID = "TASK-CLI"
 TARGET_FILE = "src/example.py"
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DENIED_SENTINEL = "CWBC_CLI_PARENT_SENTINEL"
-ALLOWED_SENTINEL = "CWBC_CLI_ALLOWED_SENTINEL"
+DENIED_SENTINEL = "CTB_CLI_PARENT_SENTINEL"
+ALLOWED_SENTINEL = "CTB_CLI_ALLOWED_SENTINEL"
 BASE_ENVIRONMENT_ALLOW = ["PATH"]
 
 
@@ -159,7 +159,7 @@ def _build_request(
     request_path.write_text(
         json.dumps(
             {
-                "schema": "codex-workbuddy-run-request",
+                "schema": "codex-task-broker-run-request",
                 "schema_version": 1,
                 "mode": "mock_only",
                 "task_id": TASK_ID,
@@ -406,9 +406,7 @@ def test_run_exits_five_on_an_unexpected_internal_error(
     def _boom(_request: object) -> None:
         raise RuntimeError("unexpected coordinator failure")
 
-    monkeypatch.setattr(
-        "bob_skills.codex_workbuddy_coordinator.cli.run_once", _boom
-    )
+    monkeypatch.setattr("codex_task_broker.cli.run_once", _boom)
 
     exit_code = main(["run", str(request_path)])
 
@@ -450,19 +448,49 @@ def test_pyproject_registers_the_console_script() -> None:
 
     scripts = data["project"]["scripts"]
 
-    assert scripts["codex-workbuddy"] == (
-        "bob_skills.codex_workbuddy_coordinator.cli:main"
-    )
+    assert scripts["codex-broker"] == "codex_task_broker.cli:main"
+
+
+def test_public_identity_is_codex_task_broker() -> None:
+    data = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    assert data["project"]["name"] == "codex-task-broker"
+    assert data["project"]["scripts"] == {
+        "codex-broker": "codex_task_broker.cli:main"
+    }
+    assert "codex-workbuddy" not in data["project"]["scripts"]
+
+
+def test_old_runtime_namespace_is_absent() -> None:
+    assert not (REPO_ROOT / "src" / "bob_skills").exists()
+
+
+def test_public_identity_cli_result_schema_is_codex_task_broker(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The machine-readable CLI result schema carries the new identity."""
+    request_path = _build_request(tmp_path)
+
+    main(["validate", str(request_path)])
+
+    payload = _stdout_json(capsys)
+    assert payload["schema"] == "codex-task-broker-cli-result"
+
+
+def test_public_identity_command_profile_id_is_codex_task_broker() -> None:
+    """The persisted command profile identifier carries the new identity."""
+    from codex_task_broker.profile import PROFILE_ID
+
+    assert PROFILE_ID == "codex-task-broker-mock-contributor-v1"
 
 
 def test_package_spawns_no_hardcoded_agent_executable() -> None:
     """Only the Run Request may name an executable.
 
-    A substring scan for "workbuddy" would match the command's own name, so
-    this instead asserts that no package module hardcodes an agent binary or a
+    A substring scan for "workbuddy" would match a product name, so this
+    instead asserts that no package module hardcodes an agent binary or a
     non-mock mode into a spawned command.
     """
-    package = REPO_ROOT / "src" / "bob_skills" / "codex_workbuddy_coordinator"
+    package = REPO_ROOT / "src" / "codex_task_broker"
 
     for module in sorted(package.glob("*.py")):
         source = module.read_text(encoding="utf-8").lower()
@@ -483,14 +511,10 @@ def test_runner_only_spawns_request_supplied_commands() -> None:
     """Contributor and verification argv come from the request, not the code.
 
     Only the leading executable name may be resolved to an absolute path, and
-    that resolution happens in the coordinator, never through a shell.
+    that resolution happens in the broker, never through a shell.
     """
     runner_source = (
-        REPO_ROOT
-        / "src"
-        / "bob_skills"
-        / "codex_workbuddy_coordinator"
-        / "runner.py"
+        REPO_ROOT / "src" / "codex_task_broker" / "runner.py"
     ).read_text(encoding="utf-8")
 
     assert "[resolve_executable(profile.executable), *profile.argv]" in runner_source
@@ -501,11 +525,7 @@ def test_runner_only_spawns_request_supplied_commands() -> None:
 def test_runner_never_passes_the_parent_environment_to_a_child() -> None:
     """No spawned child may be started with an inherited environment."""
     runner_source = (
-        REPO_ROOT
-        / "src"
-        / "bob_skills"
-        / "codex_workbuddy_coordinator"
-        / "runner.py"
+        REPO_ROOT / "src" / "codex_task_broker" / "runner.py"
     ).read_text(encoding="utf-8")
 
     assert "env=os.environ" not in runner_source
@@ -526,6 +546,7 @@ def _copy_installable_project(destination: Path) -> Path:
     """Copy only the packaging inputs, so no build artifact enters the checkout."""
     destination.mkdir(parents=True, exist_ok=True)
     shutil.copy2(REPO_ROOT / "pyproject.toml", destination / "pyproject.toml")
+    shutil.copy2(REPO_ROOT / "README.md", destination / "README.md")
     shutil.copytree(
         REPO_ROOT / "src",
         destination / "src",
@@ -556,7 +577,7 @@ def test_disposable_install_exposes_the_console_command(tmp_path: Path) -> None:
     scripts = venv_dir / ("Scripts" if os.name == "nt" else "bin")
     venv_python = scripts / ("python.exe" if os.name == "nt" else "python")
     console_script = scripts / (
-        "codex-workbuddy.exe" if os.name == "nt" else "codex-workbuddy"
+        "codex-broker.exe" if os.name == "nt" else "codex-broker"
     )
 
     install = subprocess.run(

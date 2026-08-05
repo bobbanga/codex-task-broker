@@ -1,4 +1,4 @@
-"""Formal mock-only cross-project coordination package.
+"""Codex Task Broker: bounded, evidence-verified task delegation.
 
 Public API for other Git projects. No module here imports from ``tests``.
 """

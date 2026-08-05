@@ -9,7 +9,7 @@ from pathlib import Path
 
 from .request import RunRequest
 
-PROFILE_ID = "codex-workbuddy-mock-contributor-v1"
+PROFILE_ID = "codex-task-broker-mock-contributor-v1"
 PROFILE_VERSION = 1
 ENVIRONMENT_DENY = ("API_KEY", "TOKEN", "PASSWORD", "SECRET", "CREDENTIAL")
 STDOUT_NAME = "contributor-stdout.log"

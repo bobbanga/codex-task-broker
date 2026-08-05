@@ -11,7 +11,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
-SCHEMA = "codex-workbuddy-run-request"
+SCHEMA = "codex-task-broker-run-request"
 SCHEMA_VERSION = 1
 MODE = "mock_only"
 

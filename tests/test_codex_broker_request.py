@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from bob_skills.codex_workbuddy_coordinator.profile import CommandProfile
-from bob_skills.codex_workbuddy_coordinator.request import RunRequest
+from codex_task_broker.profile import CommandProfile
+from codex_task_broker.request import RunRequest
 
 BASE_SHA = "0123456789abcdef0123456789abcdef01234567"
 BRIEFING_SHA256 = "b" * 64
@@ -16,7 +16,7 @@ def _request(tmp_path: Path, **overrides: object) -> dict:
     worktree = tmp_path / "worktree"
     run_store = tmp_path / "run-store"
     data: dict = {
-        "schema": "codex-workbuddy-run-request",
+        "schema": "codex-task-broker-run-request",
         "schema_version": 1,
         "mode": "mock_only",
         "task_id": "TASK-001",
@@ -53,7 +53,7 @@ def test_run_request_accepts_the_approved_design_example(tmp_path: Path) -> None
 
     request = RunRequest.from_path(path)
 
-    assert request.schema == "codex-workbuddy-run-request"
+    assert request.schema == "codex-task-broker-run-request"
     assert request.schema_version == 1
     assert request.mode == "mock_only"
     assert request.task_id == "TASK-001"
@@ -81,6 +81,17 @@ def test_run_request_values_are_immutable(tmp_path: Path) -> None:
         request.mode = "project_prototype"  # type: ignore[misc]
     with pytest.raises(Exception):
         request.contributor.timeout_seconds = 1  # type: ignore[misc]
+
+
+def test_run_request_rejects_the_old_codex_workbuddy_schema(tmp_path: Path) -> None:
+    """The superseded schema name is not an accepted alias.
+
+    There has been no PyPI release, so no old Run Request needs to keep working.
+    """
+    data = _request(tmp_path, schema="codex-workbuddy-run-request")
+
+    with pytest.raises(ValueError, match="codex-task-broker-run-request"):
+        RunRequest.from_path(_write(tmp_path, data))
 
 
 def test_run_request_rejects_unknown_top_level_field(tmp_path: Path) -> None:

@@ -1,8 +1,8 @@
-# codex-workbuddy-coordinator
+# Codex Task Broker / Codex 任务管家
 
 English | [简体中文](README.md)
 
-`codex-workbuddy-coordinator` is the canonical source repository for the cross-project `codex-workbuddy` CLI. It applies the V0.9a `mock_only` protocol to one explicit Run Request, invokes one bounded local Contributor, recalculates Git and verification evidence, and stops at `REVIEW_READY` for Codex review.
+`codex-task-broker` is the canonical source repository for Codex cross-project task delegation. It applies the V0.9a `mock_only` protocol to one explicit Run Request, invokes one bounded local Contributor, recalculates Git and verification evidence, and stops at `REVIEW_READY` for Codex review. The current CLI remains `mock_only` and does not yet implement the real adapter; WorkBuddy is the planned/target and only MVP-stage executor adapter.
 
 ## Status
 
@@ -17,11 +17,14 @@ English | [简体中文](README.md)
 
 ## Installation
 
-Install from GitHub:
+Install from GitHub (available only after the Task 6 remote repository rename):
 
 ```powershell
-py -3 -m pip install "git+https://github.com/bobbanga/codex-workbuddy-coordinator.git"
+py -3 -m pip install "git+https://github.com/bobbanga/codex-task-broker.git"
 ```
+
+That remote does not exist before Task 6. Until then, installing from a local
+checkout is the only supported path.
 
 Install from a local checkout:
 
@@ -34,8 +37,8 @@ A PyPI release will be considered separately after cross-project observations, p
 ## Usage
 
 ```powershell
-codex-workbuddy validate <run-request.json>
-codex-workbuddy run <run-request.json>
+codex-broker validate <run-request.json>
+codex-broker run <run-request.json>
 ```
 
 - `validate` checks the request only. A valid request returns `VALIDATED` and never starts the Contributor.
@@ -55,11 +58,11 @@ See the [protocol documentation](docs/protocol.md) for Run Request fields and ex
 - `REVIEW_READY` is a handoff to Codex, not approval.
 - The CLI contains no path that invokes real WorkBuddy.
 
-A real WorkBuddy adapter requires a native narrow/no-tools mode or a separately supported and certified API adapter. Publishing this repository does not enable that capability.
+WorkBuddy is the only MVP-stage executor adapter. A real WorkBuddy adapter requires a native narrow/no-tools mode or a separately supported and certified API adapter. Publishing this repository does not enable that capability.
 
 ## Source Ownership
 
-The Python import namespace remains `bob_skills.codex_workbuddy_coordinator` for V0.1 compatibility. The distribution and canonical source repository are both named `codex-workbuddy-coordinator`.
+The Python import namespace is `codex_task_broker`. The distribution and canonical source repository are both named `codex-task-broker`.
 
 - [Project status](docs/project-status.md)
 - [Protocol](docs/protocol.md)

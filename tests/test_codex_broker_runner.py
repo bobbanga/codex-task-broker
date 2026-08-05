@@ -16,12 +16,12 @@ from pathlib import Path
 
 import pytest
 
-from bob_skills.codex_workbuddy_coordinator.artifacts import (
+from codex_task_broker.artifacts import (
     read_manifest,
     read_result,
 )
-from bob_skills.codex_workbuddy_coordinator.request import RunRequest
-from bob_skills.codex_workbuddy_coordinator.runner import (
+from codex_task_broker.request import RunRequest
+from codex_task_broker.runner import (
     ValidationResult,
     resolve_executable,
     run_once,
@@ -30,10 +30,10 @@ from bob_skills.codex_workbuddy_coordinator.runner import (
 
 TASK_ID = "TASK-RUNNER"
 TARGET_FILE = "src/example.py"
-DENIED_SENTINEL = "CWBC_PARENT_SENTINEL"
-ALLOWED_SENTINEL = "CWBC_ALLOWED_SENTINEL"
+DENIED_SENTINEL = "CTB_PARENT_SENTINEL"
+ALLOWED_SENTINEL = "CTB_ALLOWED_SENTINEL"
 # The mock Contributor spawns Git itself, so it needs one harmless allowlisted
-# variable. Everything else must stay in the coordinator process.
+# variable. Everything else must stay in the broker process.
 BASE_ENVIRONMENT_ALLOW = ["PATH"]
 
 
@@ -103,7 +103,8 @@ def _contributor_script(
     """Write one disposable mock Contributor script.
 
     The script only edits files and creates commits in its own disposable
-    repository. It never contacts a network, a credential store, or WorkBuddy.
+    repository. It never contacts a network, a credential store, or a real
+    executor backend.
     """
     source = f"""
 import pathlib
@@ -204,7 +205,7 @@ def _build_case(
     _contributor_script(contributor_path, **contributor_options)
 
     request_data = {
-        "schema": "codex-workbuddy-run-request",
+        "schema": "codex-task-broker-run-request",
         "schema_version": 1,
         "mode": "mock_only",
         "task_id": TASK_ID,
@@ -682,7 +683,7 @@ def test_run_once_runs_verification_commands_as_argv_without_a_shell(
 def test_run_once_denies_an_unlisted_parent_environment_variable(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """The Contributor must not inherit the coordinator process environment."""
+    """The Contributor must not inherit the broker process environment."""
     monkeypatch.setenv(DENIED_SENTINEL, "parent-only-value")
     dump = tmp_path / "contributor-environment.json"
     request = _build_case(tmp_path, body=_env_dump_body(dump))

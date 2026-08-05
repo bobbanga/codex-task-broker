@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from bob_skills.codex_workbuddy_coordinator.artifacts import (
+from codex_task_broker.artifacts import (
     build_manifest,
     build_result,
     read_manifest,

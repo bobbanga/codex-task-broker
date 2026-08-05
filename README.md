@@ -1,8 +1,8 @@
-# codex-workbuddy-coordinator
+# Codex Task Broker / Codex 任务管家
 
 [English](README.en.md) | 简体中文
 
-`codex-workbuddy-coordinator` 是 `codex-workbuddy` 跨项目 CLI 的正式源码仓库。它用 V0.9a `mock_only` 协议处理一份显式 Run Request，调用一次受限的本地 Contributor，重新核验 Git 与测试证据，并停在 `REVIEW_READY` 等待 Codex 审阅。
+`codex-task-broker` 是 Codex 跨项目任务委托的正式源码仓库。它用 V0.9a `mock_only` 协议处理一份显式 Run Request，调用一次受限的本地 Contributor，重新核验 Git 与测试证据，并停在 `REVIEW_READY` 等待 Codex 审阅。当前 CLI 仍为 `mock_only`，尚未实现真实 adapter；WorkBuddy 是规划中（目标）且仅有的 MVP executor adapter。
 
 ## 当前状态
 
@@ -17,11 +17,13 @@
 
 ## 安装
 
-目前可以从 GitHub 安装：
+从 GitHub 安装（仅在 Task 6 完成远端仓库改名后可用）：
 
 ```powershell
-py -3 -m pip install "git+https://github.com/bobbanga/codex-workbuddy-coordinator.git"
+py -3 -m pip install "git+https://github.com/bobbanga/codex-task-broker.git"
 ```
+
+在 Task 6 之前，该远端地址尚不存在；当前唯一可用的安装方式是本地源码安装。
 
 从本地源码安装：
 
@@ -34,8 +36,8 @@ PyPI 发布将在跨项目观察、包元数据、CI 和 TestPyPI 验证通过�
 ## 使用
 
 ```powershell
-codex-workbuddy validate <run-request.json>
-codex-workbuddy run <run-request.json>
+codex-broker validate <run-request.json>
+codex-broker run <run-request.json>
 ```
 
 - `validate` 只校验请求；成功时返回 `VALIDATED`，不会启动 Contributor。
@@ -55,11 +57,11 @@ Run Request 字段和示例见 [协议文档](docs/protocol.md)。
 - `REVIEW_READY` 只是交给 Codex 审阅，不代表批准。
 - CLI 不包含调用真实 WorkBuddy 的路径。
 
-真实 WorkBuddy adapter 需要原生 narrow/no-tools 模式，或另行支持和认证的 API adapter；公开本仓库并不会自动开放该能力。
+WorkBuddy 是当前 MVP 阶段唯一的 executor adapter；真实 WorkBuddy adapter 需要原生 narrow/no-tools 模式，或另行支持和认证的 API adapter。公开本仓库并不会自动开放该能力。
 
 ## 源码边界
 
-Python 导入命名空间暂时保留为 `bob_skills.codex_workbuddy_coordinator`，以兼容 V0.1。独立分发包和源码仓库的名称均为 `codex-workbuddy-coordinator`。
+Python 导入命名空间为 `codex_task_broker`，独立分发包和源码仓库的名称均为 `codex-task-broker`。
 
 - [项目状态](docs/project-status.md)
 - [协议说明](docs/protocol.md)

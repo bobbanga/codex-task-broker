@@ -9,7 +9,7 @@ Boundaries enforced here:
 * every process starts from an argv array with ``shell=False``;
 * runtime artifacts are written only to the external run store;
 * there is no Review, retry, merge, push, install, or next-task transition;
-* no code path invokes real WorkBuddy.
+* no code path invokes a real executor backend.
 """
 
 from __future__ import annotations
@@ -134,7 +134,7 @@ def resolve_executable(name: str) -> str:
 
     A bare name (e.g. ``"git"``) is resolved through ``shutil.which`` so the
     child runs with a fixed path; an already-absolute executable is returned
-    unchanged. Resolution happens in the coordinator, never through a shell.
+    unchanged. Resolution happens in the broker, never through a shell.
     """
     if os.path.isabs(name):
         return name
@@ -147,7 +147,7 @@ def resolve_executable(name: str) -> str:
 def _child_environment(allow: tuple[str, ...]) -> dict:
     """Build a child environment from only the explicitly allowlisted names.
 
-    The child never inherits the coordinator process environment. Names the
+    The child never inherits the broker process environment. Names the
     parent does not define are simply omitted.
     """
     return {name: os.environ[name] for name in allow if name in os.environ}
