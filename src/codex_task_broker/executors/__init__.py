@@ -38,6 +38,18 @@ class ExecutorAdapter(Protocol):
         """Probe an installation's required capabilities without a model call."""
         ...
 
+    def doctor(self) -> dict:
+        """Return a read-only readiness report."""
+        ...
+
+    def build_command(self, request: object) -> tuple[str, ...]:
+        ...
+
+    def parse_result(
+        self, stdout: str, stderr: str, exit_code: int | None, **kwargs: object
+    ) -> object:
+        ...
+
 
 @dataclass(frozen=True)
 class WorkBuddyInstallation:
@@ -51,6 +63,9 @@ class WorkBuddyInstallation:
     source: str
     sha256: "str | None"
     version: "str | None"
+    node_path: "Path | None" = None
+    node_sha256: "str | None" = None
+    node_version: "str | None" = None
 
 
 @dataclass(frozen=True)

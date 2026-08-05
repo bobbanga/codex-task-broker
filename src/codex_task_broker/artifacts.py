@@ -73,6 +73,22 @@ def write_json(path: Path, value: dict) -> None:
     Path(path).write_text(payload, encoding="utf-8", newline="\n")
 
 
+def write_text_artifact(path: Path, text: str) -> Path:
+    """Persist raw executor output bytes exactly as captured.
+
+    Raw process output is evidence, not a decision: it is written verbatim
+    before any parsing so that malformed, truncated, or timed-out output stays
+    inspectable. Only the line ending is normalised so hashes stay stable
+    across platforms.
+    """
+    if not isinstance(text, str):
+        raise ValueError("artifact text must be a string")
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(text, encoding="utf-8", newline="\n")
+    return target
+
+
 def _read_object(path: Path) -> dict:
     target = Path(path)
     try:

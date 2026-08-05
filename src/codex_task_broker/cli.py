@@ -105,6 +105,8 @@ def _doctor_report(executor: str) -> dict:
         "sha256": caps.installation.sha256,
         "version": caps.version,
         "node_version": caps.node_version,
+        "node_path": str(caps.installation.node_path) if caps.installation.node_path else None,
+        "node_sha256": caps.installation.node_sha256,
         "required_flags": list(wb.REQUIRED_FLAGS),
         "supported_flags": list(caps.supported_flags),
         "missing_flags": list(caps.missing_flags),
