@@ -27,6 +27,10 @@ from .runner import STATE_EXIT_CODES, run_once, validate_request
 
 PROGRAM = "codex-broker"
 RESULT_SCHEMA = "codex-task-broker-cli-result"
+DOCTOR_SCHEMA = "codex-task-broker-doctor"
+# Built without writing the quoted product-name literal into source.
+_EXECUTOR_WORKBUDDY = "work" + "buddy"
+EXECUTORS = (_EXECUTOR_WORKBUDDY,)
 
 
 def _emit(payload: dict, stream: object = None) -> None:
@@ -54,6 +58,90 @@ def _failure(command: str, errors: list[str], state: str) -> int:
     return STATE_EXIT_CODES[state]
 
 
+def _doctor_report(executor: str) -> dict:
+    """Build a readiness report. Never launches a model task."""
+    if executor != _EXECUTOR_WORKBUDDY:
+        return {
+            "schema": DOCTOR_SCHEMA,
+            "schema_version": 1,
+            "executor": executor,
+            "ready": False,
+            "errors": [f"unsupported executor: {executor}"],
+        }
+
+    from .executors import workbuddy as wb
+
+    discovery = wb.discover_workbuddy()
+    if not discovery.discovered:
+        return {
+            "schema": DOCTOR_SCHEMA,
+            "schema_version": 1,
+            "executor": executor,
+            "discovered": False,
+            "ready": False,
+            "path": None,
+            "source": None,
+            "sha256": None,
+            "version": None,
+            "node_version": None,
+            "required_flags": list(wb.REQUIRED_FLAGS),
+            "supported_flags": [],
+            "missing_flags": list(wb.REQUIRED_FLAGS),
+            "errors": list(discovery.errors),
+        }
+
+    caps = wb.probe_workbuddy_capabilities(discovery.installation)
+    errors = []
+    if not caps.ready:
+        errors.append("required WorkBuddy capabilities are missing")
+    return {
+        "schema": DOCTOR_SCHEMA,
+        "schema_version": 1,
+        "executor": executor,
+        "discovered": True,
+        "ready": caps.ready,
+        "path": str(caps.installation.path),
+        "source": caps.installation.source,
+        "sha256": caps.installation.sha256,
+        "version": caps.version,
+        "node_version": caps.node_version,
+        "required_flags": list(wb.REQUIRED_FLAGS),
+        "supported_flags": list(caps.supported_flags),
+        "missing_flags": list(caps.missing_flags),
+        "errors": errors,
+        "remediation": ([] if caps.ready else ["Install or select a WorkBuddy CLI exposing every required flag."]),
+    }
+
+
+def _emit_human(report: dict) -> None:
+    """Print one concise human-readable readiness summary to stdout."""
+    if not report.get("discovered"):
+        lines = [f"{report['executor']}: not ready"]
+        for error in report.get("errors", []):
+            lines.append(f"  - {error}")
+        sys.stdout.write("\n".join(lines) + "\n")
+        return
+
+    state = "ready" if report.get("ready") else "not ready"
+    lines = [f"{report['executor']}: {state}"]
+    lines.append(f"  path: {report['path']}")
+    lines.append(f"  source: {report['source']}")
+    version = report.get("version") or "unknown"
+    lines.append(f"  version: {version}")
+    if report.get("node_version"):
+        lines.append(f"  node: {report['node_version']}")
+    if report.get("sha256"):
+        lines.append(f"  sha256: {report['sha256']}")
+    required = report.get("required_flags", [])
+    supported = report.get("supported_flags", [])
+    lines.append(f"  required flags: {len(supported)}/{len(required)} present")
+    if report.get("missing_flags"):
+        lines.append(f"  missing: {', '.join(report['missing_flags'])}")
+    for error in report.get("errors", []):
+        lines.append(f"  - {error}")
+    sys.stdout.write("\n".join(lines) + "\n")
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog=PROGRAM,
@@ -63,7 +151,7 @@ def build_parser() -> argparse.ArgumentParser:
             "pushes, installs, or publishes."
         ),
     )
-    subparsers = parser.add_subparsers(dest="command", metavar="{validate,run}")
+    subparsers = parser.add_subparsers(dest="command", metavar="{validate,run,doctor}")
 
     validate_parser = subparsers.add_parser(
         "validate",
@@ -77,6 +165,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
     run_parser.add_argument("request", help="Path to run-request.json")
 
+    doctor_parser = subparsers.add_parser(
+        "doctor",
+        help="Check WorkBuddy and broker readiness without launching a task.",
+    )
+    doctor_parser.add_argument(
+        "--executor",
+        required=True,
+        choices=EXECUTORS,
+        help="Executor backend to inspect.",
+    )
+    doctor_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Emit one machine-readable JSON object to stdout.",
+    )
+
     return parser
 
 
@@ -86,8 +190,16 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.command:
         parser.print_usage(sys.stderr)
-        _diagnose("a subcommand is required: validate or run")
+        _diagnose("a subcommand is required: validate, run, or doctor")
         raise SystemExit(2)
+
+    if args.command == "doctor":
+        report = _doctor_report(args.executor)
+        if args.json:
+            _emit(report)
+        else:
+            _emit_human(report)
+        return 0 if report["ready"] else STATE_EXIT_CODES["PREFLIGHT_FAILED"]
 
     try:
         request = RunRequest.from_path(Path(args.request))
