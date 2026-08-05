@@ -2,7 +2,22 @@
 
 English | [简体中文](README.md)
 
-`codex-task-broker` is the canonical source repository for Codex cross-project task delegation. It applies the V0.9a `mock_only` protocol to one explicit Run Request, invokes one bounded local Contributor, recalculates Git and verification evidence, and stops at `REVIEW_READY` for Codex review. The current CLI remains `mock_only` and does not yet implement the real adapter; WorkBuddy is the planned/target and only MVP-stage executor adapter.
+Let Codex hand one bounded coding task to another coding tool, then independently
+verify the result.
+
+You write a Run Request that names the checkout to change, the files the task may
+touch, and the commands that prove it worked. `codex-task-broker` invokes the coding
+tool once, then re-runs the Git and verification checks itself instead of trusting
+what the tool claims it did. It stops at `REVIEW_READY` and hands you evidence you
+can check.
+
+The problem it solves: when you delegate a change, you should not have to take the
+other side's word for whether it is correct.
+
+The current CLI supports only `mock_only` mode, meaning it starts just the local
+command you explicitly configure in the Run Request, and does not yet implement a
+real adapter. WorkBuddy is the planned/target and only MVP-stage executor adapter.
+The protocol version is V0.9a.
 
 ## Status
 
@@ -17,22 +32,21 @@ English | [简体中文](README.md)
 
 ## Installation
 
-Install from GitHub (available only after the Task 6 remote repository rename):
-
-```powershell
-py -3 -m pip install "git+https://github.com/bobbanga/codex-task-broker.git"
-```
-
-That remote does not exist before Task 6. Until then, installing from a local
-checkout is the only supported path.
-
 Install from a local checkout:
 
 ```powershell
 py -3 -m pip install .
 ```
 
-A PyPI release will be considered separately after cross-project observations, package metadata, CI, and TestPyPI verification are complete.
+Install from GitHub, which becomes usable only after the planned repository
+rename:
+
+```powershell
+py -3 -m pip install "git+https://github.com/bobbanga/codex-task-broker.git"
+```
+
+That remote does not exist yet. Until the rename lands, installing from a local
+checkout is the only supported path. The project is not published on PyPI.
 
 ## Usage
 
@@ -45,7 +59,10 @@ codex-broker run <run-request.json>
 - `run` repeats preflight, starts exactly one explicitly configured Contributor, writes evidence to the external `run_store_path`, and stops at `REVIEW_READY`.
 - Both commands emit one JSON object to stdout and send diagnostics to stderr.
 
-See the [protocol documentation](docs/protocol.md) for Run Request fields and examples.
+See the [protocol documentation](docs/protocol.md) for Run Request fields, the
+[JSON Schema](schemas/run-request.schema.json) for machine validation, and
+[`examples/minimal-run-request.json`](examples/minimal-run-request.json) for a
+minimal request.
 
 ## Security Boundaries
 
@@ -64,15 +81,23 @@ WorkBuddy is the only MVP-stage executor adapter. A real WorkBuddy adapter requi
 
 The Python import namespace is `codex_task_broker`. The distribution and canonical source repository are both named `codex-task-broker`.
 
-- [Project status](docs/project-status.md)
 - [Protocol](docs/protocol.md)
-- [Design](docs/superpowers/specs/2026-08-05-codex-workbuddy-cross-project-cli-design.md)
-- [Implementation plan](docs/superpowers/plans/2026-08-05-codex-workbuddy-cross-project-cli.md)
+- [Roadmap](ROADMAP.md)
+- [Changelog](CHANGELOG.md)
 
 ## Development
 
 ```powershell
+py -3 -m pip install -e ".[dev]"
 py -3 -m pytest -q
+py -3 -m ruff check src tests
 ```
 
-The runtime has no third-party Python dependency. Remote changes, package publication, and any real WorkBuddy adapter work remain explicit Bob approval gates.
+The runtime has no third-party Python dependency. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for the design constraints a change must
+preserve, [SECURITY.md](SECURITY.md) for private vulnerability reports, and
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
+## License
+
+[MIT](LICENSE)

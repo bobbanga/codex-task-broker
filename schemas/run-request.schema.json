@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/bobbanga/codex-task-broker/blob/main/schemas/run-request.schema.json",
+  "title": "Codex Task Broker Run Request",
+  "description": "The sole editable input for one bounded mock-only run. Unknown or missing fields fail closed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "schema_version",
+    "mode",
+    "task_id",
+    "task_revision",
+    "attempt",
+    "work_order_path",
+    "briefing_path",
+    "worktree_path",
+    "run_store_path",
+    "base_sha",
+    "briefing_sha256",
+    "allowed_files",
+    "forbidden_files",
+    "contributor",
+    "verification_commands"
+  ],
+  "properties": {
+    "schema": {
+      "const": "codex-task-broker-run-request"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "mode": {
+      "const": "mock_only"
+    },
+    "task_id": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "task_revision": {
+      "$ref": "#/$defs/positiveInteger"
+    },
+    "attempt": {
+      "$ref": "#/$defs/positiveInteger"
+    },
+    "work_order_path": {
+      "$ref": "#/$defs/absolutePath"
+    },
+    "briefing_path": {
+      "$ref": "#/$defs/absolutePath"
+    },
+    "worktree_path": {
+      "$ref": "#/$defs/absolutePath"
+    },
+    "run_store_path": {
+      "$ref": "#/$defs/absolutePath",
+      "description": "Must resolve outside worktree_path. The CLI enforces this."
+    },
+    "base_sha": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "briefing_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "allowed_files": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/relativePattern"
+      }
+    },
+    "forbidden_files": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/relativePattern"
+      },
+      "description": "Must not overlap allowed_files. The CLI enforces this."
+    },
+    "contributor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["executable", "argv", "timeout_seconds", "environment_allow"],
+      "properties": {
+        "executable": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "argv": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        },
+        "timeout_seconds": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "environment_allow": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          },
+          "$comment": "Secret-shaped names containing token, key, password, secret, credential, or authorization are rejected by the CLI."
+        }
+      }
+    },
+    "verification_commands": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "pattern": "\\S"
+    },
+    "positiveInteger": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "absolutePath": {
+      "type": "string",
+      "minLength": 3,
+      "pattern": "^([A-Za-z]:[\\\\/]|[\\\\/][\\\\/][^\\\\/\\s]+[\\\\/][^\\\\/\\s]+)",
+      "$comment": "Windows absolute path: a drive root such as C:\\dir, or a UNC path such as \\\\server\\share. A single-root path like /foo or \\foo is rejected."
+    },
+    "relativePattern": {
+      "type": "string",
+      "pattern": "^(?![A-Za-z]:)(?![\\\\/])(?!(.*[\\\\/])?\\.\\.([\\\\/]|$))\\S",
+      "$comment": "Repository-relative only; a standalone '..' segment using either slash escapes the worktree and is rejected, while ordinary filenames containing two dots are allowed."
+    }
+  }
+}

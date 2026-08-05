@@ -491,7 +491,7 @@ def test_run_once_reports_contributor_stopped_on_timeout(tmp_path: Path) -> None
 def test_run_once_reports_contributor_stopped_when_it_cannot_start(
     tmp_path: Path,
 ) -> None:
-    request = _build_case(tmp_path)
+    _build_case(tmp_path)
     request_path = tmp_path / "run-request.json"
     data = json.loads(request_path.read_text(encoding="utf-8"))
     data["contributor"]["executable"] = str(

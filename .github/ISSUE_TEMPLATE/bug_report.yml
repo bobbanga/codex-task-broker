@@ -1,0 +1,47 @@
+name: Bug report
+description: Report incorrect or unexpected behavior
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please do not include credentials, tokens, or private absolute paths.
+        For security vulnerabilities, use the Security tab instead of an issue.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you observe, and what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Include the command you ran and a redacted Run Request if relevant.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: version
+    attributes:
+      label: Installed version
+      description: >-
+        How you installed it (local checkout, git URL), plus the output of
+        `pip show codex-task-broker` or the commit SHA you built from.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system and Python version.
+      placeholder: Windows 11, Python 3.12
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Output
+      description: Relevant stdout/stderr, redacted.
+      render: shell
