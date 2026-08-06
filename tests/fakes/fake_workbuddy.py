@@ -50,6 +50,8 @@ VALUE_FLAGS = (
     "--output-format",
     "--permission-mode",
     "--tools",
+    "--allowedTools",
+    "--disallowedTools",
     "--mcp-config",
     "--model",
     "--effort",

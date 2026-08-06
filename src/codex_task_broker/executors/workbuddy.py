@@ -107,6 +107,22 @@ FORBIDDEN_FLAGS: tuple[str, ...] = (
     "--channel",
 )
 FORBIDDEN_PERMISSION_MODES: tuple[str, ...] = ("bypassPermissions", "bypass")
+DEFAULT_ALLOWED_TOOLS: tuple[str, ...] = (
+    "Bash(git status:*)",
+    "Bash(git diff:*)",
+    "Bash(git add:*)",
+    "Bash(git commit:*)",
+    "Bash(pytest:*)",
+    "Bash(py -3.12 -m pytest:*)",
+    "Bash(ruff:*)",
+)
+DEFAULT_DISALLOWED_TOOLS: tuple[str, ...] = (
+    "Bash(git push:*)",
+    "Bash(git pull:*)",
+    "Bash(git fetch:*)",
+    "Bash(gh:*)",
+    "Bash(curl:*)",
+)
 
 # Terminal executor outcomes. These are adapter-level facts only; the broker
 # still recalculates Git and verification evidence independently.
@@ -155,7 +171,9 @@ class WorkBuddyLaunchProfile:
 
     output_format: str = "json"
     permission_mode: str = "acceptEdits"
-    tools: tuple[str, ...] = ("Read", "Edit", "Write")
+    tools: tuple[str, ...] = ("Read", "Edit", "Write", "Bash")
+    allowed_tools: tuple[str, ...] = DEFAULT_ALLOWED_TOOLS
+    disallowed_tools: tuple[str, ...] = DEFAULT_DISALLOWED_TOOLS
     mcp_config: str = "{}"
     strict_mcp_config: bool = True
     session_persistence: bool = False
@@ -184,6 +202,8 @@ class WorkBuddyLaunchProfile:
             "output_format": self.output_format,
             "permission_mode": self.permission_mode,
             "tools": list(self.tools),
+            "allowed_tools": list(self.allowed_tools),
+            "disallowed_tools": list(self.disallowed_tools),
             "mcp_config": self.mcp_config,
             "strict_mcp_config": self.strict_mcp_config,
             "session_persistence": self.session_persistence,
@@ -573,6 +593,10 @@ def build_command(request: WorkBuddyExecutionRequest) -> tuple[str, ...]:
         profile.permission_mode,
         "--tools",
         ",".join(profile.tools),
+        "--allowedTools",
+        ",".join(profile.allowed_tools),
+        "--disallowedTools",
+        ",".join(profile.disallowed_tools),
         "--mcp-config",
         profile.mcp_config,
         "--strict-mcp-config",

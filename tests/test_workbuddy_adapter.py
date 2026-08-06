@@ -149,6 +149,18 @@ def test_command_is_bounded_and_deterministic(tmp_path: Path) -> None:
     assert "--max-turns" in argv
     assert argv[argv.index("--model") + 1] == "test-model"
     assert argv[argv.index("--mcp-config") + 1] == "{}"
+    assert "Bash" in argv[argv.index("--tools") + 1].split(",")
+    allowed = argv[argv.index("--allowedTools") + 1]
+    assert "Bash(git status:*)" in allowed
+    assert "Bash(git diff:*)" in allowed
+    assert "Bash(git add:*)" in allowed
+    assert "Bash(git commit:*)" in allowed
+    assert "Bash(pytest:*)" in allowed
+    assert "Bash(ruff:*)" in allowed
+    assert "git push" not in allowed
+    denied = argv[argv.index("--disallowedTools") + 1]
+    for command in ("git push", "git pull", "git fetch", "gh", "curl"):
+        assert command in denied
 
 
 def test_command_never_contains_bypass_or_extra_surfaces(tmp_path: Path) -> None:
@@ -198,6 +210,7 @@ def test_profile_defaults_stay_bounded() -> None:
     assert profile.session_persistence is False
     assert profile.max_turns >= 1
     assert profile.permission_mode not in wb.FORBIDDEN_PERMISSION_MODES
+    assert "Bash" in profile.tools
 
 
 def test_request_rejects_run_store_inside_the_worktree(tmp_path: Path) -> None:
