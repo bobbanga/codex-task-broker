@@ -660,12 +660,49 @@ class WorkBuddyAdapter:
     ) -> tuple[str, "dict | None", tuple[str, ...]]:
         return parse_result(stdout, stderr, exit_code, timed_out=timed_out)
 
-    def execute(self, request: WorkBuddyExecutionRequest) -> WorkBuddyExecutorResult:
+    def _adapt_broker_spec(self, spec: object) -> WorkBuddyExecutionRequest:
+        """Translate the broker's generic request into this adapter's contract."""
+        from ..broker import ExecutionSpec
+
+        if not isinstance(spec, ExecutionSpec):
+            raise ValueError("unsupported WorkBuddy execution request")
+        discovery = self.discover()
+        if not discovery.discovered or discovery.installation is None:
+            raise ValueError("WorkBuddy discovery failed")
+        capabilities = self.probe(discovery.installation)
+        if not capabilities.ready:
+            raise ValueError("WorkBuddy capability probe failed")
+        return WorkBuddyExecutionRequest(
+            installation=capabilities.installation,
+            prompt=spec.prompt,
+            worktree_path=spec.worktree_path,
+            run_store_path=spec.run_store_path,
+            model=spec.model,
+            profile=WorkBuddyLaunchProfile(timeout_seconds=spec.timeout_seconds),
+            environment_allow=spec.environment_allow,
+        )
+
+    def execute(self, request: object) -> WorkBuddyExecutorResult:
         """Run exactly one bounded invocation and return terminal facts.
 
         Raw stdout and stderr are persisted before any parsing so failed,
         malformed, and timed-out runs keep their evidence.
         """
+        if not isinstance(request, WorkBuddyExecutionRequest):
+            try:
+                request = self._adapt_broker_spec(request)
+            except ValueError as exc:
+                run_store = Path(getattr(request, "run_store_path", Path(".")))
+                return WorkBuddyExecutorResult(
+                    state=EXECUTOR_FAILED,
+                    exit_code=None,
+                    timed_out=False,
+                    stdout_path=run_store / EXECUTOR_STDOUT_NAME,
+                    stderr_path=run_store / EXECUTOR_STDERR_NAME,
+                    payload=None,
+                    errors=(f"executor_prepare_failed:{exc}",),
+                )
+
         argv = self.build_command(request)
         timeout = request.timeout_seconds
         timed_out = False

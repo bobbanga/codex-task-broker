@@ -14,6 +14,7 @@ from pathlib import Path
 
 import pytest
 
+from codex_task_broker.broker import ExecutionSpec
 from codex_task_broker.executors import WorkBuddyInstallation
 from codex_task_broker.executors import workbuddy as wb
 
@@ -77,6 +78,56 @@ def _run_fake(
         lambda path, *args: [sys.executable, str(path), *args],
     )
     return wb.WorkBuddyAdapter().execute(request)
+
+
+def test_adapter_accepts_the_brokers_generic_execution_spec(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    installation = _installation(tmp_path)
+    capabilities = wb.WorkBuddyCapabilities(
+        installation=installation,
+        supported_flags=wb.REQUIRED_FLAGS,
+        missing_flags=(),
+        help_available=True,
+        version="2.115.0",
+        node_version="24.15.0",
+        compatible=True,
+    )
+    adapter = wb.WorkBuddyAdapter()
+    monkeypatch.setattr(
+        adapter,
+        "discover",
+        lambda explicit_path=None: wb.DiscoveryResult(installation, ()),
+    )
+    monkeypatch.setattr(adapter, "probe", lambda found, runner=None: capabilities)
+    monkeypatch.setattr(
+        wb,
+        "build_command",
+        lambda request: (
+            sys.executable,
+            "-c",
+            "import json; print(json.dumps({'ok': True}))",
+        )
+        if isinstance(request, wb.WorkBuddyExecutionRequest)
+        else (_ for _ in ()).throw(AssertionError("request was not adapted")),
+    )
+    worktree = tmp_path / "worktree"
+    run_store = tmp_path / "run-store"
+    worktree.mkdir()
+    run_store.mkdir()
+    spec = ExecutionSpec(
+        prompt="make the bounded change",
+        worktree_path=worktree,
+        run_store_path=run_store,
+        model="hy3",
+        timeout_seconds=30,
+        environment_allow=(),
+    )
+
+    result = adapter.execute(spec)
+
+    assert result.state == wb.EXECUTOR_OK
+    assert result.payload == {"ok": True}
 
 
 # --- argv construction -------------------------------------------------
