@@ -178,7 +178,7 @@ class WorkBuddyLaunchProfile:
     strict_mcp_config: bool = True
     session_persistence: bool = False
     effort: str = "medium"
-    max_turns: int = 12
+    max_turns: int = 24
     timeout_seconds: int = 900
 
     def __post_init__(self) -> None:
@@ -652,6 +652,8 @@ def parse_result(
         return EXECUTOR_PERMISSION_REQUIRED, None, ("executor_permission_required",)
     if exit_code != 0:
         return EXECUTOR_FAILED, None, (f"executor_nonzero:{exit_code}",)
+    if "max turns" in stdout.lower() and "exceeded" in stdout.lower():
+        return EXECUTOR_FAILED, None, ("executor_max_turns_exceeded",)
 
     try:
         payload = json.loads(stdout)

@@ -209,7 +209,7 @@ def test_profile_defaults_stay_bounded() -> None:
     assert profile.output_format == "json"
     assert profile.strict_mcp_config is True
     assert profile.session_persistence is False
-    assert profile.max_turns >= 1
+    assert profile.max_turns == 24
     assert profile.permission_mode not in wb.FORBIDDEN_PERMISSION_MODES
     assert "Bash" in profile.tools
 
@@ -288,6 +288,14 @@ def test_parse_maps_non_zero_exit_to_failure() -> None:
     assert state == wb.EXECUTOR_FAILED
     assert payload is None
     assert errors == ("executor_nonzero:1",)
+
+
+def test_parse_maps_max_turns_exhaustion_to_a_distinct_failure() -> None:
+    state, payload, errors = wb.parse_result("Max turns (12) exceeded", "", 0)
+
+    assert state == wb.EXECUTOR_FAILED
+    assert payload is None
+    assert errors == ("executor_max_turns_exceeded",)
 
 
 # --- fake executor scenarios -------------------------------------------
