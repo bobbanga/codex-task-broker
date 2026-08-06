@@ -100,6 +100,17 @@ def test_discovery_falls_back_to_desktop_when_path_empty() -> None:
     assert result.installation.source == "desktop"
 
 
+def test_desktop_discovery_uses_registered_install_location() -> None:
+    bundled = Path(
+        "D:/Program Files (x86)/WorkBuddy/resources/"
+        "app.asar.unpacked/cli/bin/codebuddy"
+    )
+    with mock.patch.dict(wb.os.environ, {}, clear=True), mock.patch.object(
+        wb, "_registered_desktop_roots", return_value=(bundled.parents[4],)
+    ), mock.patch.object(Path, "is_file", return_value=True):
+        assert wb._desktop_cli_path() == bundled
+
+
 def test_discovery_reports_error_when_nothing_found() -> None:
     with mock.patch.object(wb.shutil, "which", return_value=None), mock.patch.object(
         Path, "is_file", return_value=False

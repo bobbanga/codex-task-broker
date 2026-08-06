@@ -14,6 +14,7 @@ Use it **only** when the user explicitly asks for delegation, for example:
 - "Ask the other agent to implement this, then review its work."
 - "Hand this task off and check the result."
 - "Delegate this fix."
+- "继续当前项目，把下一项实现交给 WorkBuddy，你负责审核并提交候选结果。"
 
 Do **not** use it when:
 

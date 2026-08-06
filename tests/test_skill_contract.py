@@ -51,6 +51,11 @@ def test_skill_description_states_the_explicit_delegation_trigger() -> None:
     assert "delegat" in frontmatter
 
 
+def test_skill_recognizes_the_standard_chinese_workbuddy_request() -> None:
+    text = _skill_text()
+    assert "继续当前项目，把下一项实现交给 WorkBuddy，你负责审核并提交候选结果。" in text
+
+
 def test_skill_links_its_reference() -> None:
     assert "references/request-contract.md" in _skill_text()
 

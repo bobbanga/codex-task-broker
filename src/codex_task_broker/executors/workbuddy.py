@@ -51,6 +51,10 @@ PATH_COMMAND_NAMES: tuple[str, ...] = (_CODEBUDDY, _CBC, _WORKBUDDY)
 
 # Standard Windows Desktop bundled CLI directory, relative to LOCALAPPDATA.
 _DESKTOP_CLI_DIR = ("Programs", "Work" + "Buddy", "cli")
+_UNINSTALL_REGISTRY_PATHS = (
+    r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall",
+    r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall",
+)
 
 # Required CLI flags the broker depends on for a safe, deterministic launch.
 REQUIRED_FLAGS: tuple[str, ...] = (
@@ -303,18 +307,80 @@ def _invocation_args(path: Path, *args: str) -> list[str]:
     return [str(path), *args]
 
 
+def _registered_desktop_roots() -> tuple[Path, ...]:
+    """Return WorkBuddy install roots from the Windows uninstall registry."""
+    if os.name != "nt":
+        return ()
+    try:
+        import winreg
+    except ImportError:  # pragma: no cover - Windows-only standard library
+        return ()
+
+    roots: list[Path] = []
+    for hive in (winreg.HKEY_CURRENT_USER, winreg.HKEY_LOCAL_MACHINE):
+        for registry_path in _UNINSTALL_REGISTRY_PATHS:
+            try:
+                parent = winreg.OpenKey(hive, registry_path)
+            except OSError:
+                continue
+            with parent:
+                index = 0
+                while True:
+                    try:
+                        child_name = winreg.EnumKey(parent, index)
+                    except OSError:
+                        break
+                    index += 1
+                    try:
+                        child = winreg.OpenKey(parent, child_name)
+                    except OSError:
+                        continue
+                    with child:
+                        try:
+                            display_name = str(winreg.QueryValueEx(child, "DisplayName")[0])
+                        except OSError:
+                            continue
+                        if not display_name.casefold().startswith(_WORKBUDDY.casefold()):
+                            continue
+                        install_root: Path | None = None
+                        try:
+                            location = str(winreg.QueryValueEx(child, "InstallLocation")[0]).strip()
+                        except OSError:
+                            location = ""
+                        if location:
+                            install_root = Path(location)
+                        else:
+                            try:
+                                icon = str(winreg.QueryValueEx(child, "DisplayIcon")[0])
+                            except OSError:
+                                icon = ""
+                            icon_path = icon.split(",", 1)[0].strip().strip('\"')
+                            if icon_path:
+                                install_root = Path(icon_path).parent
+                        if install_root is not None and install_root not in roots:
+                            roots.append(install_root)
+    return tuple(roots)
+
+
+def _bundled_cli(root: Path) -> Path:
+    return (
+        root
+        / "resources"
+        / "app.asar.unpacked"
+        / "cli"
+        / "bin"
+        / _CODEBUDDY
+    )
+
+
 def _desktop_cli_path() -> "Path | None":
+    for root in _registered_desktop_roots():
+        bundled = _bundled_cli(root)
+        if bundled.is_file():
+            return bundled
     program_files_x86 = os.environ.get("ProgramFiles(x86)")
     if program_files_x86:
-        bundled = (
-            Path(program_files_x86)
-            / _WORKBUDDY
-            / "resources"
-            / "app.asar.unpacked"
-            / "cli"
-            / "bin"
-            / _CODEBUDDY
-        )
+        bundled = _bundled_cli(Path(program_files_x86) / _WORKBUDDY)
         if bundled.is_file():
             return bundled
     local = os.environ.get("LOCALAPPDATA")
