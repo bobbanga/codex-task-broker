@@ -149,7 +149,8 @@ def test_command_is_bounded_and_deterministic(tmp_path: Path) -> None:
     assert "--max-turns" in argv
     assert argv[argv.index("--model") + 1] == "test-model"
     assert argv[argv.index("--mcp-config") + 1] == "{}"
-    assert "Bash" in argv[argv.index("--tools") + 1].split(",")
+    tools = argv[argv.index("--tools") + 1].split(",")
+    assert {"Bash", "Glob", "Grep"}.issubset(tools)
     allowed = argv[argv.index("--allowedTools") + 1]
     assert "Bash(git status:*)" in allowed
     assert "Bash(git diff:*)" in allowed

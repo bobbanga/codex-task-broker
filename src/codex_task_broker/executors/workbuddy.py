@@ -171,7 +171,7 @@ class WorkBuddyLaunchProfile:
 
     output_format: str = "json"
     permission_mode: str = "acceptEdits"
-    tools: tuple[str, ...] = ("Read", "Edit", "Write", "Bash")
+    tools: tuple[str, ...] = ("Read", "Edit", "Write", "Glob", "Grep", "Bash")
     allowed_tools: tuple[str, ...] = DEFAULT_ALLOWED_TOOLS
     disallowed_tools: tuple[str, ...] = DEFAULT_DISALLOWED_TOOLS
     mcp_config: str = "{}"
