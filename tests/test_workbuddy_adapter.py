@@ -374,10 +374,14 @@ def test_child_environment_contains_only_allowlisted_names(
 ) -> None:
     monkeypatch.setenv("CODEX_BROKER_SECRET_LIKE", "must-not-leak")
     monkeypatch.setenv("CODEX_BROKER_ALLOWED", "visible")
+    for name in wb.WINDOWS_RUNTIME_ENV:
+        monkeypatch.setenv(name, f"runtime-{name}")
 
     environment = wb._child_environment(("CODEX_BROKER_ALLOWED",))
 
-    assert environment == {"CODEX_BROKER_ALLOWED": "visible"}
+    assert environment["CODEX_BROKER_ALLOWED"] == "visible"
+    assert all(environment[name] == f"runtime-{name}" for name in wb.WINDOWS_RUNTIME_ENV)
+    assert "CODEX_BROKER_SECRET_LIKE" not in environment
 
 
 def test_execute_uses_shell_false_and_the_worktree_as_cwd(

@@ -49,6 +49,25 @@ _EXECUTABLE_SUFFIX = "." + "exe"
 # PATH candidate command names, in priority order.
 PATH_COMMAND_NAMES: tuple[str, ...] = (_CODEBUDDY, _CBC, _WORKBUDDY)
 
+# Non-secret Windows runtime paths required by Electron/Node startup. These are
+# always filtered from the parent environment by name; task-specific variables
+# still require an explicit request allowlist.
+WINDOWS_RUNTIME_ENV: tuple[str, ...] = (
+    "SystemRoot",
+    "WINDIR",
+    "TEMP",
+    "TMP",
+    "USERPROFILE",
+    "LOCALAPPDATA",
+    "APPDATA",
+    "PROGRAMDATA",
+    "ComSpec",
+    "HOMEDRIVE",
+    "HOMEPATH",
+    "ProgramFiles",
+    "ProgramFiles(x86)",
+)
+
 # Standard Windows Desktop bundled CLI directory, relative to LOCALAPPDATA.
 _DESKTOP_CLI_DIR = ("Programs", "Work" + "Buddy", "cli")
 _UNINSTALL_REGISTRY_PATHS = (
@@ -575,12 +594,14 @@ def build_command(request: WorkBuddyExecutionRequest) -> tuple[str, ...]:
 
 
 def _child_environment(allow: tuple[str, ...]) -> dict:
-    """Build the child environment from only the allowlisted names.
+    """Build a filtered environment with safe Windows runtime paths.
 
-    The executor never inherits the broker process environment; names the
-    parent does not define are simply omitted.
+    The executor never inherits the broker process environment. Windows runtime
+    path variables are non-secret adapter prerequisites; task-specific names
+    still require an explicit allowlist.
     """
-    return {name: os.environ[name] for name in allow if name in os.environ}
+    names = (*WINDOWS_RUNTIME_ENV, *allow)
+    return {name: os.environ[name] for name in names if name in os.environ}
 
 
 def _looks_like_permission_stop(*streams: str) -> bool:
