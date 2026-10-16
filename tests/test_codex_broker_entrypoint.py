@@ -542,15 +542,30 @@ def _offline_environment() -> dict[str, str]:
     return environment
 
 
+def _checkout_packaging_artifacts() -> set[Path]:
+    """Build leftovers an install test must not add to this checkout.
+
+    ``pip install -e`` already writes an ``egg-info`` directory before pytest
+    starts, so the check compares the checkout with itself rather than
+    demanding a completely clean tree.
+    """
+    found = set((REPO_ROOT / "src").glob("*.egg-info"))
+    for name in ("build", "dist"):
+        path = REPO_ROOT / name
+        if path.exists():
+            found.add(path)
+    return found
+
+
 def _copy_installable_project(destination: Path) -> Path:
     """Copy only the packaging inputs, so no build artifact enters the checkout."""
     destination.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(REPO_ROOT / "pyproject.toml", destination / "pyproject.toml")
-    shutil.copy2(REPO_ROOT / "README.md", destination / "README.md")
+    for name in ("pyproject.toml", "README.md", "LICENSE"):
+        shutil.copy2(REPO_ROOT / name, destination / name)
     shutil.copytree(
         REPO_ROOT / "src",
         destination / "src",
-        ignore=shutil.ignore_patterns("__pycache__"),
+        ignore=shutil.ignore_patterns("__pycache__", "*.egg-info"),
     )
     return destination
 
@@ -558,17 +573,46 @@ def _copy_installable_project(destination: Path) -> Path:
 def test_disposable_install_exposes_the_console_command(tmp_path: Path) -> None:
     """A throwaway virtual environment must expose a working console command.
 
-    The environment is created with ``--system-site-packages`` only so the
-    existing build backend is importable without a network download; the
-    project itself is installed into the disposable environment, never into
-    Bob's global environment.
+    The wheel is built by the current interpreter with build isolation off.
+    That stays offline, and it does not use the virtual environment's own
+    setuptools. A Python 3.11 virtual environment still ships an older
+    setuptools that rejects the PEP 639 license field, and the Windows CI
+    image for Python 3.12 does not ship setuptools at all. The project itself
+    is installed only into the disposable environment, never into Bob's
+    global environment.
     """
+    checkout_before = _checkout_packaging_artifacts()
     project = _copy_installable_project(tmp_path / "project")
+    wheel_dir = tmp_path / "wheels"
     venv_dir = tmp_path / "venv"
     environment = _offline_environment()
 
+    built = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "pip",
+            "wheel",
+            "--no-deps",
+            "--no-index",
+            "--no-build-isolation",
+            "--wheel-dir",
+            str(wheel_dir),
+            str(project),
+        ],
+        check=False,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        env=environment,
+        cwd=project,
+    )
+    assert built.returncode == 0, built.stdout + built.stderr
+    wheels = sorted(wheel_dir.glob("*.whl"))
+    assert len(wheels) == 1, wheels
+
     subprocess.run(
-        [sys.executable, "-m", "venv", "--system-site-packages", str(venv_dir)],
+        [sys.executable, "-m", "venv", str(venv_dir)],
         check=True,
         capture_output=True,
         text=True,
@@ -587,9 +631,8 @@ def test_disposable_install_exposes_the_console_command(tmp_path: Path) -> None:
             "pip",
             "install",
             "--no-index",
-            "--no-build-isolation",
             "--no-deps",
-            str(project),
+            str(wheels[0]),
         ],
         check=False,
         capture_output=True,
@@ -627,5 +670,4 @@ def test_disposable_install_exposes_the_console_command(tmp_path: Path) -> None:
     assert payload["state"] == "VALIDATED"
     assert payload["ready"] is True
 
-    assert not (REPO_ROOT / "build").exists()
-    assert not list((REPO_ROOT / "src").glob("*.egg-info"))
+    assert _checkout_packaging_artifacts() == checkout_before

@@ -50,6 +50,18 @@ def _force_remove(func, path, exc) -> None:
     func(path)
 
 
+def _remove_git_directory(path: Path) -> None:
+    """Delete a Git directory, including read-only object files on Windows.
+
+    Python 3.12 names the rmtree error hook ``onexc``. Python 3.11 still
+    calls it ``onerror``. The hook itself is the same.
+    """
+    if sys.version_info >= (3, 12):
+        shutil.rmtree(path, onexc=_force_remove)
+    else:
+        shutil.rmtree(path, onerror=_force_remove)
+
+
 def _git(repo: Path, *args: str) -> str:
     completed = subprocess.run(
         ["git", *args],
@@ -277,7 +289,7 @@ def test_validate_request_rejects_a_wrong_base_sha(tmp_path: Path) -> None:
 
 def test_validate_request_rejects_a_missing_git_repository(tmp_path: Path) -> None:
     request = _build_case(tmp_path)
-    shutil.rmtree(request.worktree_path / ".git", onexc=_force_remove)
+    _remove_git_directory(request.worktree_path / ".git")
 
     result = validate_request(request)
 
