@@ -25,7 +25,9 @@ jobs:
       - name: Build sdist and wheel, check metadata, install into a clean environment
         run: |
           python -m build --outdir dist
+          if ($LASTEXITCODE -ne 0) { throw "build failed" }
           python -m twine check --strict (Get-ChildItem dist\* | ForEach-Object { $_.FullName })
+          if ($LASTEXITCODE -ne 0) { throw "twine check failed" }
           $wheels = @(Get-ChildItem dist\*.whl)
           $sdists = @(Get-ChildItem dist\*.tar.gz)
           if ($wheels.Count -ne 1) { throw "expected one wheel" }
@@ -33,7 +35,7 @@ jobs:
           $venv = Join-Path $env:RUNNER_TEMP "codex-broker-clean"
           python -m venv $venv
           $python = Join-Path $venv "Scripts\python.exe"
-          & $python -m pip install --disable-pip-version-check --no-deps $wheels[0].FullName
+          & $python -m pip install --disable-pip-version-check --no-index --no-deps $wheels[0].FullName
           if ($LASTEXITCODE -ne 0) { throw "clean install failed" }
           & (Join-Path $venv "Scripts\codex-broker.exe") --help
           if ($LASTEXITCODE -ne 0) { throw "codex-broker --help failed" }

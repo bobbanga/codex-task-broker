@@ -94,7 +94,11 @@ def _assert_core_metadata(text: str, project: dict) -> None:
     description = message.get_payload()
     assert isinstance(description, str)
     readme = (ROOT / "README.md").read_text("utf-8")
-    assert description == readme
+    # Windows checkout uses CRLF; the built long description may keep those
+    # returns. Compare the text, not the newline bytes.
+    assert description.replace("\r\n", "\n").replace("\r", "\n") == readme.replace(
+        "\r\n", "\n"
+    ).replace("\r", "\n")
     assert "尚未发布到 PyPI" in description
     for marker in _secret_markers():
         assert marker not in text
