@@ -18,6 +18,9 @@ state of the `main` branch.
 
 ### Added
 
+- CI builds the sdist and wheel on Python 3.11 and 3.12, checks their metadata
+  and contents, and installs the wheel into a clean environment. Nothing is
+  uploaded to PyPI.
 - `codex-broker validate` and `codex-broker run` for the mock-only protocol.
 - Strict Run Request parsing that fails closed on unknown or missing fields.
 - One bounded Contributor invocation using argv with `shell=false` and a

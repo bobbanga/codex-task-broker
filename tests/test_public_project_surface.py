@@ -181,7 +181,14 @@ def test_ci_covers_windows_python_311_and_312_with_a_build_smoke_test() -> None:
     assert "ruff check src tests" in text
     assert "pytest" in text
     assert "python -m build" in text
+    assert "twine check --strict" in text
     assert "codex-broker --help" in text
+    # Both supported versions build and install. Publishing stays out of CI.
+    assert "matrix.python-version == '3.12'" not in text
+    assert "upload-artifact" not in text
+    assert "twine upload" not in text
+    assert "pypi.org" not in text
+    assert "id-token" not in text
 
 
 def test_github_community_templates_exist() -> None:

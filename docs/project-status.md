@@ -1,6 +1,6 @@
 # Project Status
 
-Updated: 2026-08-06
+Updated: 2026-10-16
 
 ## Position
 
@@ -26,7 +26,9 @@ remote rename, and user-level package replacement.
 - Remote repository: public GitHub repository
   `bobbanga/codex-task-broker`; local `main` tracks `origin/main`.
 - Publication: source repository is public; no package registry release has
-  been performed.
+  been performed. CI now checks the sdist, wheel, and a clean-environment
+  install. TestPyPI and production PyPI still wait for the remaining issue #1
+  gates and Bob's explicit approval.
 
 ## Verification Gate
 
