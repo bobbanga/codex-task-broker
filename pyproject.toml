@@ -30,7 +30,16 @@ Issues = "https://github.com/bobbanga/codex-task-broker/issues"
 Changelog = "https://github.com/bobbanga/codex-task-broker/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
-dev = ["build>=1.2", "jsonschema>=4.23", "pytest>=8.3", "ruff>=0.12"]
+dev = [
+  "build>=1.2",
+  "jsonschema>=4.23",
+  "pytest>=8.3",
+  "ruff>=0.12",
+  # The disposable-install test builds a wheel with isolation off, so this
+  # backend has to already be installed. Setuptools 77 understands the
+  # PEP 639 license field; older copies reject it.
+  "setuptools>=77",
+]
 
 [project.scripts]
 codex-broker = "codex_task_broker.cli:main"

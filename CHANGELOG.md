@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Nothing has been released or tagged yet. Everything below describes the current
 state of the `main` branch.
 
+### Fixed
+
+- The Windows CI test job can finish on Python 3.11 and 3.12. The disposable
+  install builds a wheel with setuptools 77 or newer, and removing a Git
+  checkout works on Python 3.11.
+
 ### Added
 
 - `codex-broker validate` and `codex-broker run` for the mock-only protocol.

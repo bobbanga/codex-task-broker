@@ -83,6 +83,13 @@ def test_dev_extra_provides_the_schema_validator() -> None:
     assert "jsonschema>=4.23" in dev
 
 
+def test_dev_extra_provides_the_offline_build_backend() -> None:
+    """Disposable installs build a wheel without downloading setuptools."""
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text("utf-8"))["project"]
+    dev = project["optional-dependencies"]["dev"]
+    assert "setuptools>=77" in dev
+
+
 def test_build_backend_minimum_supports_pep_639_metadata() -> None:
     config = tomllib.loads((ROOT / "pyproject.toml").read_text("utf-8"))
     # PEP 639 `license`/`license-files` need setuptools 77 or newer.
