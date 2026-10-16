@@ -10,6 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
+# Contact is the Issues URL below. Do not put a personal email in this file.
 authors = [{name = "Bob Zhang"}]
 keywords = ["codex", "workbuddy", "coding-agent", "delegation", "git"]
 classifiers = [
@@ -39,6 +40,9 @@ dev = [
   # backend has to already be installed. Setuptools 77 understands the
   # PEP 639 license field; older copies reject it.
   "setuptools>=77",
+  # Renders the package long description locally. This is not an upload tool
+  # for CI; the workflow must not run `twine upload`.
+  "twine>=5",
 ]
 
 [project.scripts]
